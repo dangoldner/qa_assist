@@ -10,4 +10,4 @@ This library
 * Reads emails copies them to the appropriate log based on the gmail label. 
 * Reads logs and proposes new entries to the quality documents for review and approval.
 
-Main functionality is in core.py. Support for running on cron as a google cloud function in cloud.py and cloud.md. 
+Main functionality is in core.py. Support for running on cron as a google cloud function in cloud.py and gcloud.md. 
