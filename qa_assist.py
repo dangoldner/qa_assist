@@ -1,96 +1,77 @@
-def get_gmail_labels(service):
-    """List all Gmail labels with their IDs."""
-    results = service.users().labels().list(userId='me').execute()
-    labels = results.get('labels', [])
-    return {l['name'].lower(): l['id'] for l in labels if l['type']=='user'}
-import os
-from datetime import datetime, timedelta
-from zoneinfo import ZoneInfo
 
-from google.auth import default
-from googleapiclient.discovery import build
-from claudette import Chat
+from claudette import Chat, Client
+from date_utils import ytd
+from emails import label_keys, get_daily_messages
+from logs import log_keys, write_log, read_logs
+from qdocs import qdocs
 
-from google.auth import iam
-from google.auth.transport import requests as google_requests
-from google.oauth2 import service_account
+# update logs
 
-def get_google_service_keyless(service_name, version, scopes, user_email):
-    """Get Google API service using service account with delegation via IAM signJwt API."""
-    service_account_email = 'docs-updater@qa-assistant-458920.iam.gserviceaccount.com'
-    
-    # Get default credentials for signing
-    signing_creds, _ = default()
-    
-    # Create signer that uses IAM API
-    signer = iam.Signer(
-        request=google_requests.Request(),
-        credentials=signing_creds,
-        service_account_email=service_account_email
-    )
-    
-    # Create delegated credentials
-    delegated_creds = service_account.Credentials(
-        signer=signer,
-        service_account_email=service_account_email,
-        token_uri='https://oauth2.googleapis.com/token',
-        scopes=scopes,
-        subject=user_email
-    )
-    
-    return build(service_name, version, credentials=delegated_creds)
+def get_email_cleaner():
+    instr = """Please format this as a clean plain-text chronological transcript by:
+    1. Removing all email signature blocks
+    2. Removing any quoted/forwarded text
+    3. For each message: sender's name, colon, then the message body
+    4. After each message: "---" with no newlines or returns (no blank lines)
+    5. Keep it tight - no additional blank lines
+    6. Plain text only - no markdown formatting"""
+    return Chat(model='claude-sonnet-4-20250514', sp=instr)
 
-def get_gmail_service_keyless():
-    return get_google_service_keyless(
-        'gmail', 
-        'v1', 
-        ['https://www.googleapis.com/auth/gmail.readonly'],
-        'dan@onehealthbiosensing.com'
-    )
+def clean(messages):
+    c = get_email_cleaner()
+    r = c(messages)
+    return r.content
 
-def get_gdocs_service_keyless():
-    return get_google_service_keyless(
-        'docs', 
-        'v1', 
-        ['https://www.googleapis.com/auth/documents'],
-        'dan@onehealthbiosensing.com'
-    )
-    
-def get_gsheets_service_keyless():
-    return get_google_service_keyless(
-        'sheets', 
-        'v4', 
-        ['https://www.googleapis.com/auth/spreadsheets'],
-        'dan@onehealthbiosensing.com'
-    )
+def update_logs(date=None):
+    """update all logs based on emails from date (default yesterday)"""
+    if date is None: date=ytd()
+    for k in (set(label_keys()) & set(log_keys())): 
+        messages = get_daily_messages(k, date)
+        if not messages: return
+        clean_digest = clean(messages)
+        if not clean_digest: return
+        write_log(k,clean_digest,date)
 
-# Cloud Function entry point
-def update_logs_daily(request):
-    """Cloud Function entry point - runs on schedule."""
-    gmail = get_gmail_service_keyless()
-    docs = get_gdocs_service_keyless()
-    cleaner = get_email_cleaner()
-    
-    update_logs(gmail, docs, cleaner)
-    
-    return 'Logs updated successfully'
-def update(qdoc,logs):
-    props = get_props(logs,qdoc)
-    news = filter_props(props,qdoc)
-    if news: qdoc.add_entries(news)
+## Update quality docs 
 
-def update_all_docs(start_date,end_date):
-    logs=get_logs(start_date,end_date)
-    if not any(logs.values()): return
-    for qdoc in [rreg,dlog,dio]: 
-        update(qdoc,logs)
-from datetime import datetime, timedelta
-from zoneinfo import ZoneInfo
+def _entries_prompt(logs):
+    p = f"""Review this set of engineering logs from a continuous glucose monitor development project
+            and identify candidate entries to the quality document represented in the tool. Focus on items 
+            of significant, long-term importance; ignore short-term operational or execution issues. Keep 
+            each field terse (10-20 words max).
 
-def update_qdocs_weekly(request):
-    "To be run Friday mornings at 4am for the previous week (Fr-Th)"
-    now = datetime.now(ZoneInfo('US/Central'))
-    end_date = (now - timedelta(hours=6)).date() #from 4h ago, with a margin
-    start_date = end_date - timedelta(days=7)
-    update_all_docs(start_date,end_date)
-    return f"Quality docs updated through {end_date.strftime('%d/%m/%Y')}"
+            Logs:
+            {logs} 
+        """
+    return p
+
+def _get_props(logs, qdoc):
+    """propose entries for qdoc before seeing existing entries"""
+    c = Client('claude-sonnet-4-5')
+    return c.structured(_entries_prompt(logs),[qdoc.entry_f])
+
+def _filter_props(props, qdoc):
+    p = f"""
+    Determine which proposed new entries are NOT already documented the given existing document. 
+    Return ONLY those proposals that represent genuinely NEW concepts not already captured in existing entries. 
+    - Ignore wording differences - focus on whether the core concept is already documented.
+    - If a proposal is semantically similar to an existing entry, exclude it.
+    - If NONE of the proposals are new, make NO tool calls.
+
+    Proposals:
+    {props}
+
+    Existing entries:
+    {qdoc.rows}
+    """
+    c = Client('claude-sonnet-4-5')
+    return c.structured(p,qdoc.entry_f)
+
+def update_qdocs(start_date,end_date):
+    entries=read_logs(start_date,end_date)
+    if not any(entries.values()): return
+    for qdoc in qdocs(): 
+        props = _get_props(entries,qdoc)
+        news = _filter_props(props,qdoc)
+        if news: qdoc.add_entries(news)
+
