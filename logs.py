@@ -1,6 +1,7 @@
 
 from google_auth import get_gdocs_service
 from date_utils import str_to_date
+from datetime import date # for type hints
 
 def _get_paragraph_style(part):
     return (part.get('paragraph', {})
