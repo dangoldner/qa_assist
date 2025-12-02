@@ -7,7 +7,7 @@ from qdocs import qdocs
 
 # update logs
 
-def get_email_cleaner():
+def _get_email_cleaner():
     instr = """Please format this as a clean plain-text chronological transcript by:
     1. Removing all email signature blocks
     2. Removing any quoted/forwarded text
@@ -17,8 +17,8 @@ def get_email_cleaner():
     6. Plain text only - no markdown formatting"""
     return Chat(model='claude-sonnet-4-20250514', sp=instr)
 
-def clean(messages):
-    c = get_email_cleaner()
+def _clean(messages):
+    c = _get_email_cleaner()
     r = c(messages)
     return r.content
 
@@ -28,7 +28,7 @@ def update_logs(date=None):
     for k in (set(label_keys()) & set(log_keys())): 
         messages = get_daily_messages(k, date)
         if not messages: return
-        clean_digest = clean(messages)
+        clean_digest = _clean(messages)
         if not clean_digest: return
         write_log(k,clean_digest,date)
 
