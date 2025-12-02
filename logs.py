@@ -2,23 +2,23 @@
 from google_auth import get_gdocs_service
 from date_utils import str_to_date
 
-def get_paragraph_style(part):
+def _get_paragraph_style(part):
     return (part.get('paragraph', {})
                 .get('paragraphStyle', {})
                 .get('namedStyleType'))
 
-def is_heading_level(level:int,part): 
-    return get_paragraph_style(part)==f'HEADING_{level}'
+def _is_heading_level(level:int,part): 
+    return _get_paragraph_style(part)==f'HEADING_{level}'
 
-def get_content(part):
+def _get_content(part):
     els = part.get('paragraph',{}).get('elements','')
     return ''.join([e.get('textRun',{}).get('content','') for e in els])
 
-def get_parts_list(service,doc_id):
+def _get_parts_list(service,doc_id):
     doc = service.documents().get(documentId=doc_id).execute()
     return doc['body']['content']
 
-def prepend_str(service, log_doc_id, pp_str, style='NORMAL_TEXT'):
+def _prepend_str(service, log_doc_id, pp_str, style='NORMAL_TEXT'):
     requests = [{
         'insertText': {
             'location': {'index': 1},
@@ -46,15 +46,15 @@ LOGS = {
     "submission": "1Bbr8U9iDfYPrnoFKNeMgeMxYTN6uyeTTan5cvX_WmDI"
 }
 
-def log_to_dict_by_date(parts_list):
+def _log_to_dict_by_date(parts_list):
     log_dict = {}
     key = None
     year = None
     for part in parts_list:
-        content = get_content(part).strip()
-        if is_heading_level(2,part):
+        content = _get_content(part).strip()
+        if _is_heading_level(2,part):
             year = int(content)
-        if is_heading_level(3,part) and content:
+        if _is_heading_level(3,part) and content:
             key = str_to_date(content, year)
             log_dict[key] = ''
         else: 
@@ -62,19 +62,20 @@ def log_to_dict_by_date(parts_list):
                 log_dict[key] += content
     return log_dict
 
-def get_log_entries_in_range(log_dict,start_date,end_date):
+def _get_log_entries_in_range(log_dict,start_date:date,end_date:date):
     return {str(k): v for k,v in log_dict.items() #str(date) for json
             if start_date <= k <= end_date}
 
-def get_log_by_date(service,log_key, start_date, end_date):
+def _get_log_by_date(service,log_key, start_date:date, end_date:date):
     log_id = LOGS[log_key]
-    parts_list = get_parts_list(service,log_id)
-    log_dict = log_to_dict_by_date(parts_list)
-    return get_log_entries_in_range(log_dict, start_date, end_date)
+    parts_list = _get_parts_list(service,log_id)
+    log_dict = _log_to_dict_by_date(parts_list)
+    return _get_log_entries_in_range(log_dict, start_date, end_date)
 
-def read_logs(start_date,end_date):
+def read_logs(start_date:date,end_date:date):
+    "read all logs in the range"
     gdocs=get_gdocs_service()
-    return {k: get_log_by_date(gdocs,k,start_date,end_date)
+    return {k: _get_log_by_date(gdocs,k,start_date,end_date)
             for k in list(LOGS)}
 
 def log_keys():
@@ -83,5 +84,5 @@ def log_keys():
 def write_log(key,digest,date):
     docs = get_gdocs_service()
     log_id=LOGS[key]
-    prepend_str(docs, log_id, digest + "\n", 'NORMAL_TEXT')
-    prepend_str(docs, log_id, f"{date}\n", 'HEADING_3')
+    _prepend_str(docs, log_id, digest + "\n", 'NORMAL_TEXT')
+    _prepend_str(docs, log_id, f"{date}\n", 'HEADING_3')
