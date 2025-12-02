@@ -17,6 +17,7 @@ def str_to_date(content, year=None):
         (content,'%Y/%m/%d'),
         (content,'%Y-%m-%d'),
         (content,'%m/%d/%y'),
+        (content,'%m/%d/%Y'),
         (f'{year}/{content}','%Y/%m/%d'),
         (f'{content} {year}', '%d %b %Y'),
         (f'{content} {year}', '%d %B %Y'),
