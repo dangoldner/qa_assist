@@ -73,8 +73,12 @@ def _get_log_by_date(service,log_key, start_date:date, end_date:date):
     log_dict = _log_to_dict_by_date(parts_list)
     return _get_log_entries_in_range(log_dict, start_date, end_date)
 
-def read_logs(start_date:date,end_date:date):
+def read_logs(
+        start_date_str:str, #first date in range
+        end_date_str:str    #last date in range
+    )->dict:
     "read all logs in the range"
+    start_date,end_date = str_to_date(start_date_str),str_to_date(end_date_str)
     gdocs=get_gdocs_service()
     return {k: _get_log_by_date(gdocs,k,start_date,end_date)
             for k in list(LOGS)}
