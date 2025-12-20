@@ -1,13 +1,13 @@
-
-import os
-import pickle
-
-from google.auth.transport.requests import Request
-from google_auth_oauthlib.flow import Flow
+import os,json
 from googleapiclient.discovery import build
+from google.oauth2 import service_account
 
-def get_google_service(service_name, version, scopes, token_file):
-    '''Authenticate and return a Google API service.'''
+def get_credentials_local(scopes, token_file):
+    # oauth flow (byo browswer)
+    import pickle
+    from google.auth.transport.requests import Request
+    from google_auth_oauthlib.flow import Flow
+
     creds = None
 
     if os.path.exists(token_file):
@@ -41,7 +41,7 @@ def get_google_service(service_name, version, scopes, token_file):
 
             print("Visit this URL to authorize:")
             print(auth_url)
-            print("\nAfter authorizing, paste the full redirect URL here:")
+            print("\nAfter authorizing, paste the full redirect URL here (and change to https):")
             redirect_response = input()
 
             flow.fetch_token(authorization_response=redirect_response)
@@ -50,6 +50,21 @@ def get_google_service(service_name, version, scopes, token_file):
         with open(token_file, 'wb') as token:
             pickle.dump(creds, token)
 
+    return creds
+
+def get_credentials(scopes, token_file=None):
+    # GitHub Actions: env var
+    json_str = os.environ.get('GOOGLE_SERVICE_ACCOUNT_KEY')
+    if json_str:
+        info = json.loads(json_str)
+        return service_account.Credentials.from_service_account_info(info, scopes=scopes)
+    # Solveit: existing pickle/OAuth flow
+    return get_credentials_local(scopes,token_file)
+
+def get_google_service(service_name, version, scopes):
+    '''Authenticate and return a Google API service.'''
+    token_file = f'{service_name}_token.pickle'
+    creds = get_credentials(scopes,token_file)
     return build(service_name, version, credentials=creds)
 
 def get_gmail_service():
@@ -57,8 +72,7 @@ def get_gmail_service():
     return get_google_service(
         'gmail', 
         'v1', 
-        ['https://www.googleapis.com/auth/gmail.readonly'],
-        'gmail_token.pickle'
+        ['https://www.googleapis.com/auth/gmail.readonly']
     )
 
 def get_gdocs_service():
@@ -66,8 +80,7 @@ def get_gdocs_service():
     return get_google_service(
         'docs', 
         'v1', 
-        ['https://www.googleapis.com/auth/documents'],
-        'docs_token.pickle'
+        ['https://www.googleapis.com/auth/documents']
     )
 
 def get_gsheets_service():    
@@ -75,6 +88,5 @@ def get_gsheets_service():
     return get_google_service(
         'sheets',
         'v4',
-        ['https://www.googleapis.com/auth/spreadsheets'],
-        'sheets_token.pickle'
+        ['https://www.googleapis.com/auth/spreadsheets']
     )
