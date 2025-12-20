@@ -67,8 +67,10 @@ def _filter_props(props, qdoc):
     c = Client('claude-sonnet-4-5')
     return c.structured(p,qdoc.entry_f)
 
-def update_qdocs(start_date,end_date):
-    entries=read_logs(start_date,end_date)
+def update_qdocs(start_date=None,end_date=None):
+    end_date = end_date or start_date or ytd()
+    start_date = start_date or (end_date - timedelta(days=7))
+    entries=read_logs(str(start_date),str(end_date))
     if not any(entries.values()): return
     for qdoc in qdocs(): 
         props = _get_props(entries,qdoc)
