@@ -80,8 +80,9 @@ def read_logs(
     "read all logs in the range"
     start_date,end_date = str_to_date(start_date_str),str_to_date(end_date_str)
     gdocs=get_gdocs_service()
-    return {k: _get_log_by_date(gdocs,k,start_date,end_date)
-            for k in list(LOGS)}
+    logs = {k: _get_log_by_date(gdocs,k,start_date,end_date) for k in LOGS}
+    if not logs: print(f"No logs found for {start_date}-{end_date}")
+    return logs
 
 def log_keys():
     return LOGS.keys()

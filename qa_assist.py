@@ -8,13 +8,13 @@ from qdocs import qdocs
 # update logs
 
 def _get_email_cleaner():
-    instr = """Please format this as a clean plain-text chronological transcript by:
+    instr = '''Please format this as a clean plain-text chronological transcript by:
     1. Removing all email signature blocks
     2. Removing any quoted/forwarded text
     3. For each message: sender's name, colon, then the message body
     4. After each message: "---" with no newlines or returns (no blank lines)
     5. Keep it tight - no additional blank lines
-    6. Plain text only - no markdown formatting"""
+    6. Plain text only - no markdown formatting'''
     return Chat(model='claude-sonnet-4-20250514', sp=instr)
 
 def _clean(messages):
@@ -35,14 +35,14 @@ def update_logs(date=None):
 ## Update quality docs 
 
 def _entries_prompt(logs):
-    p = f"""Review this set of engineering logs from a continuous glucose monitor development project
+    p = f'''Review this set of engineering logs from a continuous glucose monitor development project
             and identify candidate entries to the quality document represented in the tool. Focus on items 
             of significant, long-term importance; ignore short-term operational or execution issues. Keep 
             each field terse (10-20 words max).
 
             Logs:
             {logs} 
-        """
+        '''
     return p
 
 def _get_props(logs, qdoc):
@@ -75,5 +75,8 @@ def update_qdocs(start_date=None,end_date=None):
     for qdoc in qdocs(): 
         props = _get_props(entries,qdoc)
         news = _filter_props(props,qdoc)
-        if news: qdoc.add_entries(news)
+        if news: 
+            qdoc.add_entries(news)
+        else: 
+            print(f"No {qdoc.name} proposals for {start_date}-{end_date}")
 

@@ -28,6 +28,7 @@ class QDoc(GSheet):
     "Quality Document (Risk Register, Decision Log, Design I/O Matrix)"
     def __init__(self, sheet_id, tab_range, entry_f):
         super().__init__(sheet_id, tab_range)
+        self.name = tab_range.split('!')[0]
         self.entry_f = entry_f #doc entry defn function
         self.rows = self.get_rows()
         self._headers = self.rows[0] if self.rows else []
