@@ -32,17 +32,12 @@ def str_to_date(content, year=None):
             continue
     raise ValueError(f"Could not parse date: {content}")
 
-def parse_date(date,fmt=DEF_FMT,timezone=DEF_TZ):
-    tz = ZoneInfo(timezone)
-    return datetime.strptime(date, fmt).replace(tzinfo=tz)
-
 def add_days(date,delta:int):
     return date+timedelta(days=delta)
 
 def date_to_ms(date):
     return int(date.timestamp() * 1000)
 
-def start_stop_ms(date,days,fmt=DEF_FMT,timezone=DEF_TZ):
-    start_date=parse_date(date,fmt,timezone)
+def start_stop_ms(date,days):
     end_date=add_days(start_date,days)
     return date_to_ms(start_date), date_to_ms(end_date)
