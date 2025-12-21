@@ -1,7 +1,6 @@
-
-from date_utils import start_stop_ms
+from datetime import datetime
+from zoneinfo import ZoneInfo
 from google_auth import get_gmail_service
-
 # Email parsing
 def find_text_plain(payload):
     """Recursively search for text/plain part in email payload."""
@@ -15,7 +14,6 @@ def find_text_plain(payload):
                 return result
 
     return None
-
 def get_message_text(service, message_id):
     """Get plain text body, timestamp, threadId, and sender from a Gmail message."""
     import base64
@@ -31,7 +29,6 @@ def get_message_text(service, message_id):
     timestamp = msg['internalDate']
     threadId = msg['threadId']
     return decoded, timestamp, threadId, sender
-
 def extract_new_content(msg_text):
     """Extract new content from email, removing quoted replies."""
     markers = ["\r\n\r\nOn ", "\r\nFrom: "]
@@ -41,7 +38,15 @@ def extract_new_content(msg_text):
         split_point = min(valid_positions)
         return msg_text[:split_point]
     return msg_text
+def get_gmail_labels(service=None):
+    """dict of label_id's by label name.lower()"""
+    if service is None: service = get_gmail_service()
+    results = service.users().labels().list(userId='me').execute()
+    labels = results.get('labels', [])
+    return {l['name'].lower(): l['id'] for l in labels if l['type']=='user'}
 
+def label_keys(): 
+    return list(get_gmail_labels())
 def get_thread_ids(service,label_id):
     thread_list_json = service.users().threads().list(
         userId='me',
@@ -49,11 +54,8 @@ def get_thread_ids(service,label_id):
     ).execute()
     if 'threads' not in thread_list_json: return ""
     return set([d.get('id') for d in thread_list_json['threads']])
-
-# Note: We fetch all threads with label, then all messages in those threads, 
-# then filter by date. This keeps unlabeled replies in labeled threads.
-# Using q='after:X before:Y' with labelIds would miss those unlabeled messages.
-# (A labled thread doesn't necessarily tag each message in the thread with the label.)
+# Fetch all threads with label, then all messages in those threads (as not 
+# all are individually labeled).
 def get_messages_for_label(label_key): # → returns raw message dicts (all dates)
     service = get_gmail_service()
     label_ids=get_gmail_labels(service)
@@ -72,29 +74,22 @@ def get_messages_for_label(label_key): # → returns raw message dicts (all date
                     'content': extract_new_content(text_data)
                 })
     return msg_dicts
+def _date_range_ms(d, tz="America/Chicago"):
+    tz = ZoneInfo(tz)
+    start = datetime.combine(d, datetime.min.time(), tzinfo=tz)
+    t = start.timestamp() * 1000
+    return int(t), int(t + 86400000)
 
 def filter_by_date(msgs, date):
-    start_ms, end_ms=start_stop_ms(date,1)
+    start_ms, end_ms=_date_range_ms(date)
     return [m for m in msgs if m['timestamp'] and (start_ms <= int(m['timestamp']) < end_ms)]
-
+def get_daily_messages(label_key, date):
+    """Get all messages for a given label and date."""
+    msg_dicts = get_messages_for_label(label_key)
+    msgs = filter_by_date(msg_dicts, date)
+    return format_messages(msgs)
 def format_messages(msgs): # → does the sorting and string building
     sorted_msgs = sorted(msgs, key=lambda x: (x['threadId'], x['timestamp']))
     sub_strs = [f"From: {d['sender']}: \n\n{d['content']}\n\n=================" 
                 for d in sorted_msgs]
     return '\n\n'.join(sub_strs)
-
-def get_daily_messages(label_key, date:str):
-    """Get all messages for a given label and date."""
-    msg_dicts = get_messages_for_label(label_key)
-    msgs = filter_by_date(msg_dicts, date)
-    return format_messages(msgs)
-
-def get_gmail_labels(service=None):
-    """dict of label_id's by label name.lower()"""
-    if service is None: service = get_gmail_service()
-    results = service.users().labels().list(userId='me').execute()
-    labels = results.get('labels', [])
-    return {l['name'].lower(): l['id'] for l in labels if l['type']=='user'}
-
-def label_keys(): 
-    return list(get_gmail_labels())

@@ -1,9 +1,6 @@
-
 from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
-
-DEF_TZ = 'US/Central'
-DEF_FMT = '%Y/%m/%d' 
+DEF_TZ = 'America/Chicago'
 
 def today(tz=DEF_TZ):
     return datetime.now(ZoneInfo(tz)).date()
@@ -42,10 +39,3 @@ def str_to_date(content, year=None):
         except ValueError:
             continue
     raise ValueError(f"Could not parse date: {content}")
-
-def date_to_ms(date):
-    return int(date.timestamp() * 1000)
-
-def start_stop_ms(start_date,days):
-    end_date=add_days(days,start_date)
-    return date_to_ms(start_date), date_to_ms(end_date)

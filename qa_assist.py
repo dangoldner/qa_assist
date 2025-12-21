@@ -1,12 +1,8 @@
-
 from claudette import Chat, Client
 from date_utils import ytd, wk_ago
 from emails import label_keys, get_daily_messages
 from logs import log_keys, write_log, read_logs
 from qdocs import qdocs
-
-# update logs
-
 def _get_email_cleaner():
     instr = '''Please format this as a clean plain-text chronological transcript by:
     1. Removing all email signature blocks
@@ -16,24 +12,20 @@ def _get_email_cleaner():
     5. Keep it tight - no additional blank lines
     6. Plain text only - no markdown formatting'''
     return Chat(model='claude-sonnet-4-20250514', sp=instr)
-
 def _clean(messages):
     c = _get_email_cleaner()
     r = c(messages)
+    return r.content[0].text
     return r.content
-
 def update_logs(date=None):
     """update all logs based on emails from date (default yesterday)"""
     if date is None: date=ytd()
     for k in (set(label_keys()) & set(log_keys())): 
         messages = get_daily_messages(k, date)
-        if not messages: return
+        if not messages: continue
         clean_digest = _clean(messages)
-        if not clean_digest: return
+        if not clean_digest: continue
         write_log(k,clean_digest,date)
-
-## Update quality docs 
-
 def _entries_prompt(logs):
     p = f'''Review this set of engineering logs from a continuous glucose monitor development project
             and identify candidate entries to the quality document represented in the tool. Focus on items 
@@ -44,12 +36,10 @@ def _entries_prompt(logs):
             {logs} 
         '''
     return p
-
 def _get_props(logs, qdoc):
     """propose entries for qdoc before seeing existing entries"""
     c = Client('claude-sonnet-4-5')
     return c.structured(_entries_prompt(logs),[qdoc.entry_f])
-
 def _filter_props(props, qdoc):
     p = f"""
     Determine which proposed new entries are NOT already documented the given existing document. 
@@ -66,7 +56,6 @@ def _filter_props(props, qdoc):
     """
     c = Client('claude-sonnet-4-5')
     return c.structured(p,qdoc.entry_f)
-
 def update_qdocs(start_date=None,end_date=None):
     end_date = end_date or start_date or ytd()
     start_date = start_date or wk_ago(end_date)
@@ -79,4 +68,3 @@ def update_qdocs(start_date=None,end_date=None):
             qdoc.add_entries(news)
         else: 
             print(f"No {qdoc.name} proposals for {start_date}-{end_date}")
-
