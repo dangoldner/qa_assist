@@ -5,9 +5,20 @@ from zoneinfo import ZoneInfo
 DEF_TZ = 'US/Central'
 DEF_FMT = '%Y/%m/%d' 
 
-def ytd(tz=DEF_TZ, fmt=DEF_FMT):
-    now = datetime.now(ZoneInfo(tz))
-    return now-timedelta(days=1)
+def today(tz=DEF_TZ):
+    return datetime.now(ZoneInfo(tz)).date()
+
+def add_days(n:int,date=None,tz=DEF_TZ):
+    date = date or today(tz)
+    return date+timedelta(days=n)
+
+def make_day_offset(n):
+    def offset(date=None, tz=DEF_TZ):
+        return add_days(n, date, tz)
+    return offset
+
+ytd = make_day_offset(-1)
+wk_ago = make_day_offset(-7)
 
 def str_to_date(content, year=None):
     if year is None:
@@ -32,12 +43,9 @@ def str_to_date(content, year=None):
             continue
     raise ValueError(f"Could not parse date: {content}")
 
-def add_days(date,delta:int):
-    return date+timedelta(days=delta)
-
 def date_to_ms(date):
     return int(date.timestamp() * 1000)
 
 def start_stop_ms(start_date,days):
-    end_date=add_days(start_date,days)
+    end_date=add_days(days,start_date)
     return date_to_ms(start_date), date_to_ms(end_date)

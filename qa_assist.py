@@ -1,6 +1,6 @@
 
 from claudette import Chat, Client
-from date_utils import ytd
+from date_utils import ytd, wk_ago
 from emails import label_keys, get_daily_messages
 from logs import log_keys, write_log, read_logs
 from qdocs import qdocs
@@ -69,7 +69,7 @@ def _filter_props(props, qdoc):
 
 def update_qdocs(start_date=None,end_date=None):
     end_date = end_date or start_date or ytd()
-    start_date = start_date or (end_date - timedelta(days=7))
+    start_date = start_date or wk_ago(end_date)
     entries=read_logs(str(start_date),str(end_date))
     if not any(entries.values()): return
     for qdoc in qdocs(): 
