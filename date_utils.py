@@ -38,6 +38,6 @@ def add_days(date,delta:int):
 def date_to_ms(date):
     return int(date.timestamp() * 1000)
 
-def start_stop_ms(date,days):
+def start_stop_ms(start_date,days):
     end_date=add_days(start_date,days)
     return date_to_ms(start_date), date_to_ms(end_date)
