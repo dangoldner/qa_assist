@@ -12,4 +12,10 @@ This library
 
 Main interface is in qa_assist.py. 
 
-Support for running on cron as a google cloud function in cloud.py and gcloud.md. 
+## Scheduled Tasks
+
+Runs automatically via GitHub Actions:
+- **Daily**: `daily.py` updates logs from yesterday's emails
+- **Weekly**: `weekly.py` proposes quality doc entries
+
+See `github_actions.md` for setup details.
