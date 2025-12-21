@@ -57,7 +57,8 @@ def get_credentials(scopes, token_file=None):
     json_str = os.environ.get('GOOGLE_SERVICE_ACCOUNT_KEY')
     if json_str:
         info = json.loads(json_str)
-        return service_account.Credentials.from_service_account_info(info, scopes=scopes)
+        creds = service_account.Credentials.from_service_account_info(info, scopes=scopes)
+        return creds.with_subject('dan@onehealthbiosensing.com')
     # Solveit: existing pickle/OAuth flow
     return get_credentials_local(scopes,token_file)
 
