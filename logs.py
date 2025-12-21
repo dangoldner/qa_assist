@@ -1,4 +1,3 @@
-
 from google_auth import get_gdocs_service
 from date_utils import str_to_date
 from datetime import date # for type hints
@@ -7,18 +6,18 @@ def _get_paragraph_style(part):
     return (part.get('paragraph', {})
                 .get('paragraphStyle', {})
                 .get('namedStyleType'))
-
+                
 def _is_heading_level(level:int,part): 
     return _get_paragraph_style(part)==f'HEADING_{level}'
-
+    
 def _get_content(part):
     els = part.get('paragraph',{}).get('elements','')
     return ''.join([e.get('textRun',{}).get('content','') for e in els])
-
+    
 def _get_parts_list(service,doc_id):
     doc = service.documents().get(documentId=doc_id).execute()
     return doc['body']['content']
-
+    
 def _prepend_str(service, log_doc_id, pp_str, style='NORMAL_TEXT'):
     requests = [{
         'insertText': {
@@ -33,7 +32,7 @@ def _prepend_str(service, log_doc_id, pp_str, style='NORMAL_TEXT'):
             }
         }]
     service.documents().batchUpdate(documentId=log_doc_id, body={'requests': requests}).execute()
-
+    
 LOGS = {
     "assembly": "1Jb1LEU_VVorhIkslgkGOUgRADny23Z1Q310GJSo6ZWg",
     "wcp": "1S4te4jvQGokB4cSbbInO9HuQUCEY6MHRontdIplXOBo",
@@ -62,17 +61,17 @@ def _log_to_dict_by_date(parts_list):
             if key is not None: 
                 log_dict[key] += content
     return log_dict
-
+    
 def _get_log_entries_in_range(log_dict,start_date:date,end_date:date):
     return {str(k): v for k,v in log_dict.items() #str(date) for json
             if start_date <= k <= end_date}
-
+            
 def _get_log_by_date(service,log_key, start_date:date, end_date:date):
     log_id = LOGS[log_key]
     parts_list = _get_parts_list(service,log_id)
     log_dict = _log_to_dict_by_date(parts_list)
     return _get_log_entries_in_range(log_dict, start_date, end_date)
-
+    
 def read_logs(
         start_date_str:str, #first date in range
         end_date_str:str    #last date in range
@@ -83,10 +82,9 @@ def read_logs(
     logs = {k: _get_log_by_date(gdocs,k,start_date,end_date) for k in LOGS}
     if not logs: print(f"No logs found for {start_date}-{end_date}")
     return logs
-
 def log_keys():
     return LOGS.keys()
-
+    
 def write_log(key,digest,date):
     docs = get_gdocs_service()
     log_id=LOGS[key]

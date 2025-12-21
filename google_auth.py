@@ -1,7 +1,6 @@
 import os,json
 from googleapiclient.discovery import build
 from google.oauth2 import service_account
-
 def get_credentials_local(scopes, token_file):
     # oauth flow (byo browswer)
     import pickle
@@ -51,7 +50,7 @@ def get_credentials_local(scopes, token_file):
             pickle.dump(creds, token)
 
     return creds
-
+    
 def get_credentials(scopes, token_file=None):
     # GitHub Actions: env var
     json_str = os.environ.get('GOOGLE_SERVICE_ACCOUNT_KEY')
@@ -61,13 +60,13 @@ def get_credentials(scopes, token_file=None):
         return creds.with_subject('dan@onehealthbiosensing.com')
     # Solveit: existing pickle/OAuth flow
     return get_credentials_local(scopes,token_file)
-
+    
 def get_google_service(service_name, version, scopes):
     '''Authenticate and return a Google API service.'''
     token_file = f'{service_name}_token.pickle'
     creds = get_credentials(scopes,token_file)
     return build(service_name, version, credentials=creds)
-
+    
 def get_gmail_service():
     '''Authenticate and return Gmail API service.'''
     return get_google_service(
@@ -75,7 +74,7 @@ def get_gmail_service():
         'v1', 
         ['https://www.googleapis.com/auth/gmail.readonly']
     )
-
+    
 def get_gdocs_service():
     '''Authenticate and return GDocs API service.'''
     return get_google_service(
@@ -83,7 +82,7 @@ def get_gdocs_service():
         'v1', 
         ['https://www.googleapis.com/auth/documents']
     )
-
+    
 def get_gsheets_service():    
     '''Authenticate and return Google Sheets API service.'''
     return get_google_service(

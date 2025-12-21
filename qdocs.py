@@ -1,5 +1,6 @@
-
 from google_auth import get_gsheets_service
+
+
 
 class GSheet:
     "A google sheet"
@@ -45,7 +46,7 @@ class QDoc(GSheet):
         props=self._sort_by_date_if_present(props)
         rows=[self._mk_row(prop) for prop in props]
         self.append(rows)
-
+        
 def qdocs(): 
     def risk_f(hazard:str, harms:str, causes:str)->dict:
         "Candidate Risk Register entry"
@@ -83,4 +84,3 @@ def qdocs():
         tab_range='Design IO Matrix!A:G',
         entry_f=design_f)
     return [rreg,dlog,dio]
-
