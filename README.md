@@ -3,7 +3,7 @@
 I am part of a medical device startup. We make progress in every arena (manufacturing, clinical, ...) primarily by emailing with contractors. There are two types of artifacts I need to maintain:
 
 * A set of *detailed logs*, one for each function.
-* Aset of informal but foundational *quality documents*: risk register, decision log, design i/o matrix. 
+* A set of informal but foundational *quality documents*: risk register, decision log, design i/o matrix. 
 
 This library
 

@@ -1,3 +1,5 @@
-google-api-python-client
-google-auth
-claudette
+claudette==0.3.13
+google_api_python_client==2.187.0
+google_auth_oauthlib==1.2.4
+protobuf==6.33.4
+python_dateutil==2.9.0.post0
