@@ -1,6 +1,10 @@
 from google_auth import get_gdocs_service
-from date_utils import str_to_date
-from datetime import date # for type hints
+from datetime import datetime, date # for type hints
+from dateutil.parser import parse
+def str_to_date(content, year=None):
+    if year is None:
+        year = datetime.now().year
+    return parse(content, default=datetime(year, 1, 1)).date()
 
 def _get_paragraph_style(part):
     return (part.get('paragraph', {})

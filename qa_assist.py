@@ -1,8 +1,13 @@
 from claudette import Chat, Client
-from date_utils import ytd, wk_ago
 from emails import label_keys, get_daily_messages
 from logs import log_keys, write_log, read_logs
 from qdocs import qdocs
+from datetime import datetime, timedelta
+from zoneinfo import ZoneInfo
+DEF_TZ = 'America/Chicago'
+def ytd(): return datetime.now(ZoneInfo(DEF_TZ)).date()+timedelta(days=-1)
+def wk_ago(date): return date+timedelta(days=-7)
+
 def _get_email_cleaner():
     instr = '''Please format this as a clean plain-text chronological transcript by:
     1. Removing all email signature blocks
