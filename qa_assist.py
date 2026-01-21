@@ -47,7 +47,7 @@ def _entries_prompt(logs):
     
 def _get_props(logs, qdoc):
     """propose entries for qdoc before seeing existing entries"""
-    c = Client('claude-sonnet-4-5')
+    c = Client('claude-opus-4-5')
     return c.structured(_entries_prompt(logs),[qdoc.entry_f])
     
 def _filter_props(props, qdoc):
@@ -64,7 +64,7 @@ def _filter_props(props, qdoc):
     Existing entries:
     {qdoc.rows}
     """
-    c = Client('claude-sonnet-4-5')
+    c = Client('claude-opus-4-5')
     return c.structured(p,qdoc.entry_f)
     
 def update_qdocs(start_date=None,end_date=None):
