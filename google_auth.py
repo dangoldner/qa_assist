@@ -63,7 +63,7 @@ def get_credentials(scopes, token_file=None):
     
 def get_google_service(service_name, version, scopes):
     '''Authenticate and return a Google API service.'''
-    token_file = f'{service_name}_token.pickle'
+    token_file = os.path.expanduser(f'~/{service_name}_token.pickle')
     creds = get_credentials(scopes,token_file)
     return build(service_name, version, credentials=creds)
     

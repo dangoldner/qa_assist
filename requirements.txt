@@ -1,3 +1,4 @@
+anthropic==0.79.0
 claudette==0.3.13
 google_api_python_client==2.187.0
 google_auth_oauthlib==1.2.4
