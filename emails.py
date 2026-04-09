@@ -1,5 +1,7 @@
 from datetime import datetime
 from zoneinfo import ZoneInfo
+from time import sleep
+from googleapiclient.errors import HttpError
 from google_auth import get_gmail_service
 # Email parsing
 def find_text_plain(payload):
@@ -69,7 +71,14 @@ def get_messages_for_label(label_key): # → returns raw message dicts (all date
     for thread_id in thread_ids:
         thread = service.users().threads().get(userId='me', id=thread_id).execute()
         for msg in thread['messages']:
-            text_data, timestamp, threadId, sender = get_message_text(service, msg['id'])
+            text_data, timestamp, threadId, sender = None, None, None, None
+            for attempt in range(3):
+                try:
+                    text_data, timestamp, threadId, sender = get_message_text(service, msg['id'])
+                    break
+                except HttpError as e:
+                    if attempt < 2: sleep(2 ** attempt)
+                    else: print(f"Skipping message {msg['id']}: {e}")
             if text_data:
                 msg_dicts.append({
                     'timestamp': timestamp,
