@@ -47,7 +47,8 @@ LOGS = {
     "firmware": "1KF8LlS0UbJCdVbcqp_7BEwScJQc4EHwfI6fxNCU-SKE",
     "quality": "1uXwbWHT3PjMFg6CJCIPs8ttQYTEdE4SYqm8wmH_AIvA",
     "clinicals": "1EXJ4kd531ewCqZpD-aPqKdlMfVmRmQ9LIRsppUhSLuk",
-    "submission": "1Bbr8U9iDfYPrnoFKNeMgeMxYTN6uyeTTan5cvX_WmDI"
+    "submission": "1Bbr8U9iDfYPrnoFKNeMgeMxYTN6uyeTTan5cvX_WmDI",
+    "hardware": "1fvmtIe3AG3TEpkhKbONeEZO6ugOXnKKTjuWFHD6PPe8"
 }
 
 def _log_to_dict_by_date(parts_list):
