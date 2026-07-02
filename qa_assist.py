@@ -4,9 +4,15 @@ from logs import log_keys, write_log, read_logs
 from qdocs import qdocs
 from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
+
 DEF_TZ = 'America/Chicago'
 def ytd(): return datetime.now(ZoneInfo(DEF_TZ)).date()+timedelta(days=-1)
 def wk_ago(date): return date+timedelta(days=-7)
+
+
+from datetime import date
+assert wk_ago(datetime.now(ZoneInfo(DEF_TZ)).date())==ytd()+timedelta(-6)
+assert wk_ago(date(2026,1,19))==date(2026,1,12)
 
 def _get_email_cleaner():
     instr = '''Please format this as a clean plain-text chronological transcript by:
@@ -16,14 +22,16 @@ def _get_email_cleaner():
     4. After each message: "---" with no newlines or returns (no blank lines)
     5. Keep it tight - no additional blank lines
     6. Plain text only - no markdown formatting'''
-    return Chat(model='claude-sonnet-4-20250514', sp=instr)
+    return Chat(model='claude-sonnet-4-5', sp=instr)
     
+
 def _clean(messages):
     c = _get_email_cleaner()
     r = c(messages)
     return r.content[0].text
     return r.content
     
+
 def update_logs(date=None):
     """update all logs based on emails from date (default yesterday)"""
     if date is None: date=ytd()
@@ -34,6 +42,7 @@ def update_logs(date=None):
         if not clean_digest: continue
         write_log(k,clean_digest,date)
         
+
 def _entries_prompt(logs):
     p = f'''Review this set of engineering logs from a continuous glucose monitor development project
             and identify candidate entries to the quality document represented in the tool. Focus on items 
@@ -45,11 +54,13 @@ def _entries_prompt(logs):
         '''
     return p
     
+
 def _get_props(logs, qdoc):
     """propose entries for qdoc before seeing existing entries"""
     c = Client('claude-opus-4-5')
     return c.structured(_entries_prompt(logs),[qdoc.entry_f])
     
+
 def _filter_props(props, qdoc):
     p = f"""
     Determine which proposed new entries are NOT already documented the given existing document. 
@@ -67,6 +78,7 @@ def _filter_props(props, qdoc):
     c = Client('claude-opus-4-5')
     return c.structured(p,qdoc.entry_f)
     
+
 def update_qdocs(start_date=None,end_date=None):
     end_date = end_date or start_date or ytd()
     start_date = start_date or wk_ago(end_date)
